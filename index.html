@@ -300,4 +300,78 @@ function sd(){const i=inf(XD),s=D.stu.find(x=>x[0]==XD),n=$('#d_nama').value.tri
 {const au=P.admin_usr;P.admin_usr=()=>{const h=au();return XD?h.replace(/<div class="card"><h3>Detail:[\s\S]*?(?=<div class="card"><h3>Pengguna)/,()=>dtl()):h}}
 
 render();
+// ==========================================
+// FUNGSI UNTUK DAFTAR AKUN MURID/GURU BARU
+// ==========================================
+async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
+  const { data, error } = await supabase.auth.signUp({
+    email: emailInput,
+    password: passwordInput,
+    options: {
+      data: {
+        nama_lengkap: namaLengkap,
+        role: statusRole
+      }
+    }
+  });
+
+  if (error) {
+    alert("Gagal mendaftar akun: " + error.message);
+    return;
+  }
+
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        { 
+          id: data.user.id, 
+          nama: namaLengkap, 
+          role: statusRole, 
+          email: emailInput,
+          kelas: kelasInput,
+          aktif: true        
+        }
+      ]);
+
+    if (profileError) {
+      alert("Akun terbuat, tapi profil gagal dicatat: " + profileError.message);
+    } else {
+      alert("Sukses! Akun " + statusRole + " berhasil didaftarkan.");
+    }
+  }
+}
+
+// ==========================================
+// FUNGSI UNTUK LOGIN (MASUK KE GAME/DASHBOARD)
+// ==========================================
+async function loginUser(emailInput, passwordInput) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: emailInput,
+    password: passwordInput,
+  });
+
+  if (error) {
+    alert("Email atau Password salah: " + error.message);
+    return;
+  }
+
+  const { data: profil, error: profilError } = await supabase
+    .from('profiles')
+    .select('role, nama')
+    .eq('id', data.user.id)
+    .single();
+
+  if (profil) {
+    alert("Selamat datang kembali, " + profil.nama + "!");
+    
+    if (profil.role === 'guru') {
+      alert("Membuka Dashboard Guru untuk memantau nilai...");
+    } else if (profil.role === 'siswa') {
+      alert("Membuka lembar kuis Matematika Siswa...");
+    }
+    
+    render(); 
+  }
+}
 </script></body></html>
