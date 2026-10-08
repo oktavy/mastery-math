@@ -269,6 +269,35 @@ return `<div class="lnav"><b class="lg" style="padding:0">➗ Mastery Math</b><s
 <div class="sec"><div class="hero" style="border-radius:28px;text-align:center;padding:36px 20px"><div style="display:flex;justify-content:center">${mi(110)}</div><h2 style="font-size:clamp(24px,4vw,34px)">Siap membuat belajar matematika lebih seru?</h2><p style="margin:10px 0 18px">Masuk dengan akun yang didaftarkan sekolahmu, atau hubungi Admin sekolah untuk memulai.</p><button class="btn y big" onclick="go('','role')">MASUK SEKARANG</button> <button class="btn o w big" onclick="toast('Hubungi Admin sekolah untuk mendaftarkan akun')">HUBUNGI ADMIN</button></div></div>
 <div class="ft"><b>➗ Mastery Math</b><br>Belajar. Berlatih. Menguasai.<br><small>Satu platform untuk siswa, guru, dan orang tua. © 2026</small></div>`};
 
+    // === MASUKKAN INI TEPAT DI BARIS AKHIR SEBELUM } PENUTUP FUNCTION RENDER() ===
+    const btnSubmit = document.getElementById('submit');
+    if (btnSubmit) {
+        btnSubmit.onclick = async (e) => {
+            e.preventDefault();
+
+            const namaUser = document.getElementById('nama') ? document.getElementById('nama').value : '';
+            const emailUser = document.getElementById('email') ? document.getElementById('email').value : '';
+
+            if (!namaUser || !emailUser) {
+                alert('Mohon isi nama dan email terlebih dahulu!');
+                return;
+            }
+
+            // Mengirim data form langsung ke tabel kontak di Supabase
+            const { data, error } = await supabase
+                .from('kontak')
+                .insert([{ nama: namaUser, email: emailUser }]);
+
+            if (error) {
+                alert('Gagal menyimpan ke database: ' + error.message);
+            } else {
+                alert('Data nama & email sukses tersimpan ke Supabase!');
+                if(document.getElementById('nama')) document.getElementById('nama').value = '';
+                if(document.getElementById('email')) document.getElementById('email').value = '';
+            }
+        };
+    }
+
 render();
 const SUPABASE_URL = "https://azachzieuynmptxshctv.supabase.co"; 
 const SUPABASE_KEY = "sb_publishable_e8Bf5K3cV3HTFKVpqVZpTQ_Z6sHCchM"; 
