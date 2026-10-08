@@ -313,23 +313,16 @@ const firebaseConfig = {
   measurementId: "G-2DET3QX55E"
 };
 
-// Mengaktifkan fitur Firebase dengan alamat server Singapore Anda yang akurat
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const database = firebase.database("https://firebasedatabase.app");
 
-// JALANKAN TAMPILAN UTAMA
 render();
 
-// =========================================================================
-// 1. FUNGSI DAFTAR MURID/GURU BARU (LANGSUNG DARI FORM WEBSITE ADMIN ANDA)
-// =========================================================================
 async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
   try {
-    // Membuat ID unik otomatis agar data tidak bentrok di server
     const customId = "user_" + Date.now();
 
-    // Langsung mencatat ke database. Jalur ini 100% aman dari blokir browser di device lain!
     await database.ref('profiles/' + customId).set({
       id: customId,
       email: emailInput,
@@ -350,10 +343,6 @@ async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole
     alert("Gagal mendaftarkan murid dari web: " + error.message);
   }
 }
-
-// =========================================================================
-// 2. FUNGSI LOGIN UTAMA GLOBAL (LANGSUNG MENCOCOKKAN DATA DI MURID / HP LAIN)
-// =========================================================================
 async function loginUser(emailInput, passwordInput) {
   try {
     database.ref('profiles').once('value').then((snapshot) => {
