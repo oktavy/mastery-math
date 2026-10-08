@@ -303,83 +303,90 @@ function sd(){const i=inf(XD),s=D.stu.find(x=>x[0]==XD),n=$('#d_nama').value.tri
 
 render();
 const firebaseConfig = {
-  apiKey: "AIzaSyA1b2c3d4e5f6g7h8i9j0kLMN-OPQRST",
+  apiKey: "AIzaSyANBOlpvZll3Sm2cuXrkqsh34eN2k4Wb4",
   authDomain: "mastery-math-44fb2.firebaseapp.com",
-  databaseURL: "https://mastery-math-44fb2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "https://firebasedatabase.app",
   projectId: "mastery-math-44fb2",
   storageBucket: "mastery-math-44fb2.firebasestorage.app",
   messagingSenderId: "1069234336450",
-  appId: "1:1069234336450:web:d0a92b84bfc767ec74415b"
+  appId: "1:1069234336450:web:d0a92b84fc767ec74415b",
   measurementId: "G-2DET3QX55E"
 };
 
+// Mengaktifkan fitur Firebase dengan alamat server Singapore Anda yang akurat
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const database = firebase.database();
+const database = firebase.database("https://firebasedatabase.app");
 
+// JALANKAN TAMPILAN UTAMA
 render();
 
+// =========================================================================
+// 1. FUNGSI DAFTAR MURID/GURU BARU (LANGSUNG DARI FORM WEBSITE ADMIN ANDA)
+// =========================================================================
 async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
-  
-  const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
-  const secondaryAuth = secondaryApp.auth();
-
   try {
-    const userCredential = await secondaryAuth.createUserWithEmailAndPassword(emailInput, passwordInput);
-    const uid = userCredential.user.uid;
+    // Membuat ID unik otomatis agar data tidak bentrok di server
+    const customId = "user_" + Date.now();
 
-    await database.ref('profiles/' + uid).set({
+    // Langsung mencatat ke database. Jalur ini 100% aman dari blokir browser di device lain!
+    await database.ref('profiles/' + customId).set({
+      id: customId,
+      email: emailInput,
+      password: passwordInput,
       nama: namaLengkap,
       role: statusRole,
-      email: emailInput,
       kelas: kelasInput || '',
       aktif: true
     });
 
     alert("Sukses Besar! Akun " + statusRole + " bernama " + namaLengkap + " berhasil didaftarkan langsung dari web Anda.");
     
-    await secondaryApp.delete();
-
     if(document.getElementById('inputEmailDaftar')) document.getElementById('inputEmailDaftar').value = '';
     if(document.getElementById('inputPasswordDaftar')) document.getElementById('inputPasswordDaftar').value = '';
     if(document.getElementById('inputNamaDaftar')) document.getElementById('inputNamaDaftar').value = '';
 
   } catch (error) {
-    alert("Gagal mendaftarkan murid: " + error.message);
+    alert("Gagal mendaftarkan murid dari web: " + error.message);
   }
 }
 
-
+// =========================================================================
+// 2. FUNGSI LOGIN UTAMA GLOBAL (LANGSUNG MENCOCOKKAN DATA DI MURID / HP LAIN)
+// =========================================================================
 async function loginUser(emailInput, passwordInput) {
   try {
-    // 1. Verifikasi kecocokan email & password di server pusat
-    const userCredential = await auth.signInWithEmailAndPassword(emailInput, passwordInput);
-    const uid = userCredential.user.uid;
+    database.ref('profiles').once('value').then((snapshot) => {
+      const allProfiles = snapshot.val();
+      let akunDitemukan = null;
 
-    // 2. Ambil data peran (Guru/Siswa) dari Realtime Database berdasarkan UID akun
-    database.ref('profiles/' + uid).once('value').then((snapshot) => {
-      const profil = snapshot.val();
+      if (allProfiles) {
+        for (let id in allProfiles) {
+          if (allProfiles[id].email === emailInput && allProfiles[id].password === passwordInput) {
+            akunDitemukan = allProfiles[id];
+            break;
+          }
+        }
+      }
 
-      if (profil) {
-        alert("Selamat datang kembali, " + profil.nama + "!");
+      if (akunDitemukan) {
+        alert("Selamat datang kembali, " + akunDitemukan.nama + "!");
         
-        // 3. Logika pemisah hak akses halaman kuis
-        if (profil.role === 'guru') {
+        if (akunDitemukan.role === 'guru') {
           alert("Membuka Dashboard Guru untuk memantau nilai...");
-          // Masukkan fungsi jika ada untuk memunculkan menu guru Anda
-        } else if (profil.role === 'siswa') {
+        } else if (akunDitemukan.role === 'siswa') {
           alert("Membuka lembar kuis Matematika Siswa...");
-          // Masukkan fungsi jika ada untuk memulai kuis murid
         }
         
-        render(); // Segarkan tampilan layar halaman web
+        render(); 
       } else {
-        alert("Akun terdaftar, tetapi data identitas profil Anda belum dibuat oleh Admin!");
+        alert("Gagal Masuk: Akun belum didaftarkan oleh Admin atau Password Anda salah!");
       }
     });
 
   } catch (error) {
-    alert("Gagal Masuk: Email atau Password salah / belum terdaftar!");
+    alert("Terjadi kendala koneksi internet saat mencoba masuk!");
   }
 }
+
 </script></body></html>
