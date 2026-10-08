@@ -301,77 +301,45 @@ function sd(){const i=inf(XD),s=D.stu.find(x=>x[0]==XD),n=$('#d_nama').value.tri
 
 render();
 // ==========================================
-// FUNGSI UNTUK DAFTAR AKUN MURID/GURU BARU
-// ==========================================
-async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
-  const { data, error } = await supabase.auth.signUp({
-    email: emailInput,
-    password: passwordInput,
-    options: {
-      data: {
-        nama_lengkap: namaLengkap,
-        role: statusRole
-      }
-    }
-  });
-
-  if (error) {
-    alert("Gagal mendaftar akun: " + error.message);
-    return;
-  }
-
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        { 
-          id: data.user.id, 
-          nama: namaLengkap, 
-          role: statusRole, 
-          email: emailInput,
-          kelas: kelasInput,
-          aktif: true        
-        }
-      ]);
-
-    if (profileError) {
-      alert("Akun terbuat, tapi profil gagal dicatat: " + profileError.message);
-    } else {
-      alert("Sukses! Akun " + statusRole + " berhasil didaftarkan.");
-    }
-  }
-}
-
-// ==========================================
-// FUNGSI UNTUK LOGIN (MASUK KE GAME/DASHBOARD)
+// FUNGSI UTAMA LOGIN GLOBAL UNTUK SEMUA DEVICE
 // ==========================================
 async function loginUser(emailInput, passwordInput) {
+  // 1. Ketuk gerbang masuk Supabase pusat
   const { data, error } = await supabase.auth.signInWithPassword({
     email: emailInput,
     password: passwordInput,
   });
 
+  // Jika email atau password tidak cocok di database pusat
   if (error) {
-    alert("Email atau Password salah: " + error.message);
+    alert("Gagal Masuk: Akun tidak ditemukan atau salah ketik!");
     return;
   }
 
+  // 2. Jika akun terdaftar, cari perannya (Guru / Siswa) di tabel profiles
   const { data: profil, error: profilError } = await supabase
     .from('profiles')
     .select('role, nama')
     .eq('id', data.user.id)
     .single();
 
+  // 3. Logika pengarah halaman berdasarkan peran yang Anda tentukan
   if (profil) {
     alert("Selamat datang kembali, " + profil.nama + "!");
     
     if (profil.role === 'guru') {
       alert("Membuka Dashboard Guru untuk memantau nilai...");
+      // Panggil fungsi visual menu guru Anda di sini (misal: tampilkanMenuGuru())
     } else if (profil.role === 'siswa') {
       alert("Membuka lembar kuis Matematika Siswa...");
+      // Panggil fungsi visual kuis murid Anda di sini (misal: mulaiKuisSiswa())
     }
     
-    render(); 
+    render(); // Segarkan tampilan layar halaman
+  } else {
+    // Jika akun ada di Auth tapi profilnya belum masuk ke tabel profiles
+    alert("Akun aktif, tetapi data profil Anda belum didaftarkan oleh Admin!");
   }
 }
+
 </script></body></html>
