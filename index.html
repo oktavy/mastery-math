@@ -300,45 +300,60 @@ function sd(){const i=inf(XD),s=D.stu.find(x=>x[0]==XD),n=$('#d_nama').value.tri
 {const au=P.admin_usr;P.admin_usr=()=>{const h=au();return XD?h.replace(/<div class="card"><h3>Detail:[\s\S]*?(?=<div class="card"><h3>Pengguna)/,()=>dtl()):h}}
 
 render();
-// ==========================================
-// FUNGSI UTAMA LOGIN GLOBAL UNTUK SEMUA DEVICE
-// ==========================================
-async function loginUser(emailInput, passwordInput) {
-  // 1. Ketuk gerbang masuk Supabase pusat
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailInput,
-    password: passwordInput,
+// =============================================================
+// FUNGSI PENDAFTARAN KHUSUS GURU/ADMIN UTAMA (LEWAT WEBSITE)
+// =============================================================
+async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
+  
+  // PENTING: Ganti teks di bawah ini dengan SERVICE_ROLE_KEY asli yang Anda salin dari Supabase!
+  const SUPABASE_SERVICE_ROLE_KEY = "sb_publishable_e8Bf5K3cV3HTFKVpqVZpTQ_Z6sHCchM";
+  
+  // Membuat jalur admin mandiri agar sesi masuk laptop Anda tidak tertimpa atau keluar sendiri
+  const supabaseAdminClient = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { 
+      persistSession: false,
+      autoRefreshToken: false
+    }
   });
 
-  // Jika email atau password tidak cocok di database pusat
+  // 1. Daftarkan akun baru ke sistem login pusat Supabase
+  const { data, error } = await supabaseAdminClient.auth.admin.createUser({
+    email: emailInput,
+    password: passwordInput,
+    email_confirm: true, // Akun langsung aktif instan tanpa verifikasi email!
+    user_metadata: { nama_lengkap: namaLengkap, role: statusRole }
+  });
+
   if (error) {
-    alert("Gagal Masuk: Akun tidak ditemukan atau salah ketik!");
+    alert("Gagal mendaftar: " + error.message);
     return;
   }
 
-  // 2. Jika akun terdaftar, cari perannya (Guru / Siswa) di tabel profiles
-  const { data: profil, error: profilError } = await supabase
-    .from('profiles')
-    .select('role, nama')
-    .eq('id', data.user.id)
-    .single();
+  // 2. Jika sukses terdaftar, otomatis catat data profilnya ke tabel profiles Anda
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        { 
+          id: data.user.id, 
+          nama: namaLengkap, 
+          role: statusRole, 
+          email: emailInput,
+          kelas: kelasInput,
+          aktif: true        
+        }
+      ]);
 
-  // 3. Logika pengarah halaman berdasarkan peran yang Anda tentukan
-  if (profil) {
-    alert("Selamat datang kembali, " + profil.nama + "!");
-    
-    if (profil.role === 'guru') {
-      alert("Membuka Dashboard Guru untuk memantau nilai...");
-      // Panggil fungsi visual menu guru Anda di sini (misal: tampilkanMenuGuru())
-    } else if (profil.role === 'siswa') {
-      alert("Membuka lembar kuis Matematika Siswa...");
-      // Panggil fungsi visual kuis murid Anda di sini (misal: mulaiKuisSiswa())
+    if (profileError) {
+      alert("Akun terbuat di sistem auth, tapi profil gagal dicatat ke tabel: " + profileError.message);
+    } else {
+      alert("Sukses Besar! Akun " + statusRole + " bernama " + namaLengkap + " berhasil didaftarkan dan bisa langsung dipakai di device lain.");
+      
+      // Mengosongkan kembali form input di web Anda setelah sukses mendata
+      if(document.getElementById('inputEmailDaftar')) document.getElementById('inputEmailDaftar').value = '';
+      if(document.getElementById('inputPasswordDaftar')) document.getElementById('inputPasswordDaftar').value = '';
+      if(document.getElementById('inputNamaDaftar')) document.getElementById('inputNamaDaftar').value = '';
     }
-    
-    render(); // Segarkan tampilan layar halaman
-  } else {
-    // Jika akun ada di Auth tapi profilnya belum masuk ke tabel profiles
-    alert("Akun aktif, tetapi data profil Anda belum didaftarkan oleh Admin!");
   }
 }
 
