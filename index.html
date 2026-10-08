@@ -274,35 +274,38 @@ const SUPABASE_KEY = "sb_publishable_e8Bf5K3cV3HTFKVpqVZpTQ_Z6sHCchM";
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 render();
-// Jalankan ini untuk mendeteksi form submit
-const btnSubmit = document.getElementById('submit');
+// Memberikan jeda 500 milidetik (0.5 detik) agar fungsi render() selesai memunculkan tombol ke layar
+setTimeout(() => {
+    const btnSubmit = document.getElementById('submit');
 
-if (btnSubmit) {
-    btnSubmit.addEventListener('click', async (e) => {
-        e.preventDefault();
+    if (btnSubmit) {
+        btnSubmit.addEventListener('click', async (e) => {
+            e.preventDefault();
 
-        const namaUser = document.getElementById('nama') ? document.getElementById('nama').value : '';
-        const emailUser = document.getElementById('email') ? document.getElementById('email').value : '';
+            const namaUser = document.getElementById('nama') ? document.getElementById('nama').value : '';
+            const emailUser = document.getElementById('email') ? document.getElementById('email').value : '';
 
-        if (!namaUser || !emailUser) {
-            alert('Mohon isi nama dan email terlebih dahulu!');
-            return;
-        }
+            if (!namaUser || !emailUser) {
+                alert('Mohon isi nama dan email terlebih dahulu!');
+                return;
+            }
 
-        // Kirim data ke tabel 'kontak' di Supabase
-        const { data, error } = await supabase
-            .from('kontak')
-            .insert([{ nama: namaUser, email: emailUser }]);
+            // Kirim data ke tabel 'kontak' di Supabase
+            const { data, error } = await supabase
+                .from('kontak')
+                .insert([{ nama: namaUser, email: emailUser }]);
 
-        if (error) {
-            alert('Gagal menyimpan ke database: ' + error.message);
-        } else {
-            alert('Data nama & email sukses tersimpan ke Supabase!');
-            
-            if(document.getElementById('nama')) document.getElementById('nama').value = '';
-            if(document.getElementById('email')) document.getElementById('email').value = '';
-        }
-    });
-}
+            if (error) {
+                alert('Gagal menyimpan ke database: ' + error.message);
+            } else {
+                alert('Data nama & email sukses tersimpan ke Supabase!');
+                
+                if(document.getElementById('nama')) document.getElementById('nama').value = '';
+                if(document.getElementById('email')) document.getElementById('email').value = '';
+            }
+        });
+    }
+}, 500);
+
 
 </script></body></html>
