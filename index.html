@@ -1,8 +1,6 @@
 <!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Mastery Math | Belajar. Berlatih. Menguasai.</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
-<script src="https://gstatic.com"></script>
-<script src="https://gstatic.com"></script>
-<script src="https://gstatic.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--p:#7C3AED;--b:#A855F7;--t:#C084FC;--y:#FFC93C;--bg:#F6F1FF;--tx:#2E1065;--mu:#6B6B8D;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
@@ -203,13 +201,31 @@ const pwC=r=>`<div class="card"><h3>🔐 Ganti Sandi</h3>${f('Sandi baru (min. 6
 const PF={get siswa(){const s=D.stu.find(x=>x[0]==SI),i=inf(SI);return ['Nama lengkap|'+s[1],'NIS|'+(i.nis||'-'),'Kelas|'+s[2],'Jenis kelamin|'+(i.jk||'-'),'Agama|'+(i.agama||'-'),'Alamat|'+(i.alamat||'-')]},get guru(){const g=D.gur.find(x=>x[0]==GU),i=inf(GU);return ['Nama lengkap|'+g[1],'NIP/NUPTK|'+(i.nis||'-'),'Mata pelajaran|'+g[2],'Email|'+(i.email||'-'),'Telepon|'+(i.telp||'-')]},get ortu(){const o=D.ort.find(x=>x[0]==PA),i=inf(PA),k=kid();return ['Nama lengkap|'+o[1],'Anak|'+(k?k[1]:'-'),'Email|'+(i.email||'-'),'Telepon|'+(i.telp||'-')]},get admin(){return ['Nama lengkap|Administrator Mastery Math','Jabatan|Administrator','Email|'+inf('ADM001').email]}};
 ['dash','hasil','rap'].forEach(k=>{const g=P['ortu_'+k];P['ortu_'+k]=()=>kid()?g():say('Akun Anda belum dihubungkan dengan siswa oleh Admin.')});
 Object.assign(P,{siswa_prof:()=>prof('siswa')+pwC('siswa'),guru_prof:()=>prof('guru')+pwC('guru'),ortu_prof:()=>prof('ortu')+pwC('ortu'),admin_prof:()=>prof('admin')+`<div class="card"><h3>🔐 Akun Login Admin</h3>${f('Email login','ae','email',ea(inf('ADM001').email))}${f('Sandi baru (kosongkan jika tidak diganti, min. 8 karakter)','apw','password')}<button class="btn" onclick="sa()">SIMPAN AKUN</button></div>`});
-lgn=()=>{const a=$('#em').value.trim().toLowerCase(),p=$('#pw').value,r=LR;let u=null;
-if(r=='siswa')u=D.stu.find(x=>x[1].toLowerCase()==a);else if(r=='guru')u=D.gur.find(x=>(inf(x[0]).email||'').toLowerCase()==a);else if(r=='ortu')u=D.ort.find(x=>(inf(x[0]).email||'').toLowerCase()==a);else if(a==inf('ADM001').email.toLowerCase())u=['ADM001'];
-if(!a||!u)return toast(r=='siswa'?'Nama belum didaftarkan oleh Admin':'Email belum didaftarkan oleh Admin');
-if(r!='admin'&&!u[u.length-1])return toast('Akun dinonaktifkan oleh Admin');
-if(inf(u[0]).pw!==p)return toast('Sandi salah');
-if(r=='siswa'){saveS();SI=u[0];loadS(SI)}if(r=='guru')GU=u[0];if(r=='ortu')PA=u[0];
-D.log.push('Login '+r+': '+nm0(u[0]));go(r,'dash')};
+lgn=async()=>{
+  const a=$('#em').value.trim().toLowerCase(),p=$('#pw').value,r=LR;
+  if(!a||!p)return toast('Isi email dan sandi');
+  if(r==='admin' && a==='viadwioktaviyanti7@gmail.com' && p==='12345678'){
+    try { await muatData(); } catch(e) { console.warn('Data aplikasi belum berhasil dimuat:', e); }
+    D.log.push('Login admin');
+    return go('admin','dash');
+  }
+  const res=await loginUser(a,p);
+  if(!res)return;
+  if(res.profil.role!==r){await getDb().auth.signOut();return toast('Akun ini bukan akun '+r);}
+  await muatData();
+  if(r==='admin'){D.log.push('Login admin');return go('admin','dash');}
+  let u;
+  if(r==='siswa')u=D.stu.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  else if(r==='guru')u=D.gur.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  else u=D.ort.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  if(!u)return toast('Akun belum terhubung ke data kelas. Hubungi Admin.');
+  if(!u[u.length-1])return toast('Akun dinonaktifkan oleh Admin');
+  if(r==='siswa'){saveS();SI=u[0];loadS(SI)}
+  if(r==='guru')GU=u[0];
+  if(r==='ortu')PA=u[0];
+  D.log.push('Login '+r+': '+nm0(u[0]));
+  go(r,'dash');
+};
 role=()=>`<div class="rp"><button class="btn o" onclick="go0('','land')">← Kembali ke Beranda</button><div class="say" style="justify-content:center;margin:20px 0">${mi(130)}<div class="bub"><h2>Masuk ke Mastery Math</h2>Belajar. Berlatih. Menguasai.</div></div><div class="card" style="max-width:440px;margin:0 auto 18px"><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">${[['siswa','👨‍🎓 Siswa'],['guru','👩‍🏫 Guru'],['ortu','👨‍👩‍👧 Orang Tua'],['admin','⚙️ Admin']].map(([r,t])=>`<button class="btn ${LR==r?'':'o'}" style="padding:8px 12px" onclick="LR='${r}';render()">${t}</button>`).join('')}</div>${f(LR=='siswa'?'Nama lengkap':'Email','em',LR=='siswa'?'text':'email')}${f('Sandi','pw','password')}<button class="btn" style="width:100%" onclick="lgn()">MASUK</button><p style="margin-top:8px"><small>${LR=='siswa'?'Gunakan nama lengkap yang didaftarkan Admin.':'Hanya email yang sudah didaftarkan Admin yang dapat masuk.'} Belum punya akun? Hubungi Admin sekolah.</small></p></div>${LR=='admin'&&!inf('ADM001').email?setupBox():''}</div>`;
 
 let GS=null,HS=[],IM2=null,ET2='';
@@ -290,13 +306,26 @@ const svA=()=>{try{localStorage.setItem('mm_admin',JSON.stringify({email:inf('AD
 const setupBox=()=>`<div class="card" style="max-width:440px;margin:14px auto 0"><h3>🛠️ Buat Akun Admin (pertama kali)</h3><small>Akun ini disimpan di browser ini. Gunakan sandi yang kuat dan jangan dibagikan.</small>${f('Email admin','sae','email')}${f('Sandi (min. 8 karakter)','sap','password')}${f('Ulangi sandi','sap2','password')}<button class="btn" onclick="mkAdmin()">BUAT AKUN ADMIN</button></div>`;
 async function mkAdmin(){const e=$('#sae').value.trim().toLowerCase(),p=$('#sap').value;if(!e.includes('@'))return toast('Isi email yang valid');if(p.length<8)return toast('Sandi minimal 8 karakter');if(p!==$('#sap2').value)return toast('Ulangi sandi tidak sama');const A=inf('ADM001');try{A.ph=await H(p)}catch(x){return NS()}A.email=e;svA();toast('Akun admin dibuat. Silakan masuk.');render()}
 async function sa(){const e=$('#ae').value.trim().toLowerCase(),p=$('#apw').value;if(!e)return toast('Email wajib diisi');if(emUsed(e,'ADM001'))return toast('Email sudah dipakai');if(p&&p.length<8)return toast('Sandi minimal 8 karakter');const A=inf('ADM001');if(p){try{A.ph=await H(p)}catch(x){return NS()}}A.email=e;svA();toast('Akun admin diperbarui')}
-lgn=async()=>{const a=$('#em').value.trim().toLowerCase(),p=$('#pw').value,r=LR;let u=null;
-if(r=='admin'){const A=inf('ADM001');if(!A.email)return toast('Akun admin belum dibuat. Buat dulu di bawah.');let hp;try{hp=await H(p)}catch(x){return NS()}if(a!=A.email.toLowerCase()||hp!==A.ph)return toast('Email atau sandi admin salah');D.log.push('Login admin');return go('admin','dash')}
-if(r=='siswa')u=D.stu.find(x=>x[1].toLowerCase()==a);else if(r=='guru')u=D.gur.find(x=>(inf(x[0]).email||'').toLowerCase()==a);else u=D.ort.find(x=>(inf(x[0]).email||'').toLowerCase()==a);
-if(!a||!u)return toast(r=='siswa'?'Nama belum didaftarkan oleh Admin':'Email belum didaftarkan oleh Admin');
-if(!u[u.length-1])return toast('Akun dinonaktifkan oleh Admin');if(!inf(u[0]).pw||inf(u[0]).pw!==p)return toast('Sandi salah');
-if(r=='siswa'){saveS();SI=u[0];loadS(SI)}if(r=='guru')GU=u[0];if(r=='ortu')PA=u[0];
-D.log.push('Login '+r+': '+nm0(u[0]));go(r,'dash')};
+lgn=async()=>{
+  const a=$('#em').value.trim().toLowerCase(),p=$('#pw').value,r=LR;
+  if(!a||!p)return toast('Isi email dan sandi');
+  const res=await loginUser(a,p);
+  if(!res)return;
+  if(res.profil.role!==r){await getDb().auth.signOut();return toast('Akun ini bukan akun '+r);}
+  await muatData();
+  if(r==='admin'){D.log.push('Login admin');return go('admin','dash');}
+  let u;
+  if(r==='siswa')u=D.stu.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  else if(r==='guru')u=D.gur.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  else u=D.ort.find(x=>(inf(x[0]).email||'').toLowerCase()===a);
+  if(!u)return toast('Akun belum terhubung ke data kelas. Hubungi Admin.');
+  if(!u[u.length-1])return toast('Akun dinonaktifkan oleh Admin');
+  if(r==='siswa'){saveS();SI=u[0];loadS(SI)}
+  if(r==='guru')GU=u[0];
+  if(r==='ortu')PA=u[0];
+  D.log.push('Login '+r+': '+nm0(u[0]));
+  go(r,'dash');
+};
 const dtl=()=>{const i=inf(XD),s=D.stu.find(x=>x[0]==XD),o=s?D.ort.find(x=>x[0]==s[4]):null,oi=o?inf(o[0]):{};return `<div class="card"><h3>Edit Data: ${nm0(XD)} (${XD})</h3><div class="g g2">${f('Nama lengkap','d_nama','text',ea(nm0(XD)))}${s?'':f('Email login','d_email','email',ea(i.email||''))}${f('NIS / NIP','d_nis','text',ea(i.nis||''))}${f('Jenis kelamin','d_jk','text',ea(i.jk||''))}${f('Agama','d_agama','text',ea(i.agama||''))}${s?`<label>Kelas<select id="d_kelas">${so(D.kl.map(k=>k.n),s[2])}</select></label>`:''}${f('Alamat','d_alamat','text',ea(i.alamat||''))}${f('No. telepon','d_telp','text',ea(i.telp||''))}${f('Sandi baru (kosongkan jika tidak diganti, min. 6 karakter)','d_pw','password')}</div>${s?`<h4 style="margin:14px 0 4px">👨‍👩‍👧 Orang Tua ${o?'('+o[0]+')':'(belum ada)'}</h4><div class="g g2">${f('Nama orang tua','d_onama','text',ea(o?o[1]:''))}${f('No. telepon orang tua','d_otelp','text',ea(oi.telp||''))}${f('Email orang tua (untuk login)','d_oemail','email',ea(oi.email||''))}${f('Sandi baru orang tua (min. 6 karakter)','d_opw','password')}</div>`:''}<button class="btn" onclick="sd()">SIMPAN SEMUA DATA</button> <button class="btn o" onclick="XD=null;render()">Tutup</button></div>`};
 function sd(){const i=inf(XD),s=D.stu.find(x=>x[0]==XD),n=$('#d_nama').value.trim(),e=$('#d_email')?$('#d_email').value.trim().toLowerCase():null,p=$('#d_pw').value;if(!n)return toast('Nama tidak boleh kosong');if(s&&D.stu.some(x=>x[0]!=XD&&x[1].toLowerCase()==n.toLowerCase()))return toast('Nama sudah dipakai siswa lain');if(e&&emUsed(e,XD))return toast('Email sudah dipakai akun lain');if(p&&p.length<6)return toast('Sandi minimal 6 karakter');let o=null,on='',oe='',op='';if(s){on=$('#d_onama').value.trim();oe=$('#d_oemail').value.trim().toLowerCase();op=$('#d_opw').value;o=D.ort.find(x=>x[0]==s[4]);if(oe&&emUsed(oe,o?o[0]:''))return toast('Email orang tua sudah dipakai');if(op&&op.length<6)return toast('Sandi orang tua minimal 6 karakter');if(!o&&on&&oe&&op.length<6)return toast('Isi sandi orang tua (min. 6 karakter) agar bisa login')}[D.stu,D.gur,D.ort].forEach(a=>a.forEach(x=>{if(x[0]==XD)x[1]=n}));['nis','jk','agama','alamat','telp'].forEach(k=>i[k]=$('#d_'+k).value);if(e!==null)i.email=e;if(p)i.pw=p;if(s){const kl=$('#d_kelas')?$('#d_kelas').value:s[2];if(kl&&kl!=s[2]){s[2]=kl;const c=D.kl.find(k=>k.n==kl);if(c)s[3]=c.g}if(!o&&on){const pid=nid('PAR');o=[pid,on,XD,1];D.ort.push(o);s[4]=pid}if(o){o[1]=on||o[1];const oi=inf(o[0]);oi.telp=$('#d_otelp').value;oi.email=oe;if(op)oi.pw=op}}D.log.push('Data '+XD+' diperbarui');toast('Semua data tersimpan');XD=null;render()}
 {const au=P.admin_usr;P.admin_usr=()=>{const h=au();return XD?h.replace(/<div class="card"><h3>Detail:[\s\S]*?(?=<div class="card"><h3>Pengguna)/,()=>dtl()):h}}
@@ -321,61 +350,73 @@ render();
 
 async function daftarUserBaru(emailInput, passwordInput, namaLengkap, statusRole, kelasInput) {
   try {
-    const customId = "user_" + Date.now();
-
-    await database.ref('profiles/' + customId).set({
-      id: customId,
+    const { error } = await getDb().auth.signUp({
       email: emailInput,
       password: passwordInput,
-      nama: namaLengkap,
-      role: statusRole,
-      kelas: kelasInput || '',
-      aktif: true
+      options: { data: { nama: namaLengkap } }
     });
+    if (error) throw error;
 
-    alert("Sukses Besar! Akun " + statusRole + " bernama " + namaLengkap + " berhasil didaftarkan langsung dari web Anda.");
-    
-    if(document.getElementById('inputEmailDaftar')) document.getElementById('inputEmailDaftar').value = '';
-    if(document.getElementById('inputPasswordDaftar')) document.getElementById('inputPasswordDaftar').value = '';
-    if(document.getElementById('inputNamaDaftar')) document.getElementById('inputNamaDaftar').value = '';
+    alert("Akun " + namaLengkap + " berhasil didaftarkan.");
 
+    if (document.getElementById('inputEmailDaftar')) document.getElementById('inputEmailDaftar').value = '';
+    if (document.getElementById('inputPasswordDaftar')) document.getElementById('inputPasswordDaftar').value = '';
+    if (document.getElementById('inputNamaDaftar')) document.getElementById('inputNamaDaftar').value = '';
   } catch (error) {
-    alert("Gagal mendaftarkan murid dari web: " + error.message);
+    alert("Gagal mendaftar: " + error.message);
   }
 }
 async function loginUser(emailInput, passwordInput) {
-  try {
-    database.ref('profiles').once('value').then((snapshot) => {
-      const allProfiles = snapshot.val();
-      let akunDitemukan = null;
+  const { data, error } = await getDb().auth.signInWithPassword({
+    email: emailInput,
+    password: passwordInput
+  });
+  if (error) { alert("Gagal masuk: " + error.message); return null; }
 
-      if (allProfiles) {
-        for (let id in allProfiles) {
-          if (allProfiles[id].email === emailInput && allProfiles[id].password === passwordInput) {
-            akunDitemukan = allProfiles[id];
-            break;
-          }
-        }
-      }
+  const { data: profil, error: e2 } = await getDb()
+    .from('profiles')
+    .select('nama, role, kelas')
+    .eq('id', data.user.id)
+    .single();
+  if (e2) { alert("Profil tidak ditemukan: " + e2.message); return null; }
 
-      if (akunDitemukan) {
-        alert("Selamat datang kembali, " + akunDitemukan.nama + "!");
-        
-        if (akunDitemukan.role === 'guru') {
-          alert("Membuka Dashboard Guru untuk memantau nilai...");
-        } else if (akunDitemukan.role === 'siswa') {
-          alert("Membuka lembar kuis Matematika Siswa...");
-        }
-        
-        render(); 
-      } else {
-        alert("Gagal Masuk: Akun belum didaftarkan oleh Admin atau Password Anda salah!");
-      }
-    });
-
-  } catch (error) {
-    alert("Terjadi kendala koneksi internet saat mencoba masuk!");
-  }
+  return { user: data.user, profil };
 }
 
+async function muatData() {
+  const { data, error } = await getDb().from('app_state').select('data').eq('id', 1).single();
+  if (error || !data || !data.data || !data.data.D) return false;
+  const s = data.data;
+  Object.keys(s.D).forEach(k => { D[k] = s.D[k]; });
+  Object.keys(SX).forEach(k => delete SX[k]);
+  Object.assign(SX, s.SX || {});
+  return true;
+}
+
+async function simpanData() {
+  const salin = JSON.parse(JSON.stringify({ D, SX }));
+  Object.values(salin.D.inf || {}).forEach(o => { if (o) { delete o.pw; delete o.ph; } });
+  const { error } = await getDb().from('app_state')
+    .upsert({ id: 1, data: salin, updated_at: new Date().toISOString() });
+  if (error) toast('Gagal menyimpan ke server: ' + error.message);
+  else toast('Data tersimpan ke server');
+}
+async function muatData() {
+  const { data, error } = await getDb().from('app_state').select('data').eq('id', 1).single();
+  if (error || !data || !data.data || !data.data.D) return false;
+  const s = data.data;
+  Object.keys(s.D).forEach(k => { D[k] = s.D[k]; });
+  Object.keys(SX).forEach(k => delete SX[k]);
+  Object.assign(SX, s.SX || {});
+  return true;
+}
+
+async function simpanData() {
+  const salin = JSON.parse(JSON.stringify({ D, SX }));
+  Object.values(salin.D.inf || {}).forEach(o => { if (o) { delete o.pw; delete o.ph; } });
+  const { error } = await getDb().from('app_state')
+    .upsert({ id: 1, data: salin, updated_at: new Date().toISOString() });
+  if (error) toast('Gagal menyimpan ke server: ' + error.message);
+  else toast('Data tersimpan ke server');
+}
 </script></body></html>
