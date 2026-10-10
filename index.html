@@ -419,4 +419,25 @@ async function simpanData() {
   if (error) toast('Gagal menyimpan ke server: ' + error.message);
   else toast('Data tersimpan ke server');
 }
+
+async function lupaSandi() {
+  const email = document.getElementById('em').value.trim();
+
+  if (!email) {
+    alert('Masukkan email akun terlebih dahulu.');
+    return;
+  }
+
+  const { error } = await getDb().auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+
+  if (error) {
+    alert('Gagal mengirim tautan pemulihan: ' + error.message);
+    return;
+  }
+
+  alert('Jika akun dapat dipulihkan, periksa email untuk tautan pengaturan ulang sandi.');
+}
+
 </script></body></html>
